@@ -3,9 +3,12 @@ package main
 import (
 	"fmt"
 	"os"
+
+	"github.com/codecrafters-io/git-starter-go/cmd/executing"
+	"github.com/codecrafters-io/git-starter-go/cmd/initcommand"
+	"github.com/codecrafters-io/git-starter-go/cmd/util/command"
 )
 
-// Usage: your_program.sh <command> <arg1> <arg2> ...
 func main() {
 	// You can use print statements as follows for debugging, they'll be visible when running tests.
 	fmt.Println("Logs from your program will appear here!")
@@ -15,25 +18,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	switch command := os.Args[1]; command {
-	case "init":
-		// Uncomment this block to pass the first stage!
-		//
-		// for _, dir := range []string{".git", ".git/objects", ".git/refs"} {
-		// 	if err := os.MkdirAll(dir, 0755); err != nil {
-		// 		fmt.Fprintf(os.Stderr, "Error creating directory: %s\n", err)
-		// 	}
-		// }
-		//
-		// headFileContents := []byte("ref: refs/heads/main\n")
-		// if err := os.WriteFile(".git/HEAD", headFileContents, 0644); err != nil {
-		// 	fmt.Fprintf(os.Stderr, "Error writing file: %s\n", err)
-		// }
-		//
-		// fmt.Println("Initialized git directory")
+	// Interface
+	var ex executing.Executor
 
+	switch _command := os.Args[1]; _command {
+	case command.Init:
+		ex = initcommand.InitType{}
+		err := ex.Execute(nil)
+		if err != nil {
+			os.Exit(1)
+		}
 	default:
-		fmt.Fprintf(os.Stderr, "Unknown command %s\n", command)
+		fmt.Fprintf(os.Stderr, "Unknown command %s\n", _command)
 		os.Exit(1)
 	}
 }
