@@ -1,33 +1,32 @@
 package initcommand
 
 import (
-	"fmt"
+	"log/slog"
 	"os"
 
 	"github.com/codecrafters-io/git-starter-go/cmd/util/gitpath"
 )
 
-type InitType struct {
+// Init is a struct that implements the Executor interface
+type Init struct {}
 
-}
-
-func (i InitType) Execute(options map[string]bool) error {
-
+func (i Init) Execute(options map[string]bool) error {
+	slog.Debug("Called: Init.Execute()")
 	paths := []string{gitpath.Git, gitpath.Objects, gitpath.Refs}
 
 	for _, dir := range paths {
 		if err := os.MkdirAll(dir, 0755); err != nil {
-			fmt.Fprintf(os.Stderr, "Error creating directory: %s\n", err)
+			slog.Error("Error creating directory:", "err", err)
 			return err
 		}
 	}
 	
 	if err := os.WriteFile(gitpath.HEAD, getHeadFileContent(), 0644); err != nil {
-		fmt.Fprintf(os.Stderr, "Error writing file: %s\n", err)
+		slog.Error("Error writing file:", "err", err)
 		return err
 	}
 	
-	fmt.Println("Initialized git directory")
+	slog.Debug("Initialized git directory")
 	return nil
 }
 
