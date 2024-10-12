@@ -45,6 +45,6 @@ func ReadTreeObject(shaDigest string) ([]byte, error) {
 */
 func getPathToFileURLFrom(shaDigest string) string {
 	slog.Debug("Called: getPathToFileURLFrom()")
-	slog.Debug("Decoding path from digest", "shaDigest", shaDigest)
+	slog.Info("Decoding path from digest", "shaDigest", shaDigest)
 	return strings.Join([]string{gitpath.Objects, shaDigest[0:2], shaDigest[2:]}, "/")
 }
