@@ -20,6 +20,6 @@ func (cf CatFile) Execute(options map[string]bool) error {
 	}
 
 	index := strings.Index(string(bytes), "\x00")
-	fmt.Print(bytes[index+1:])
+	fmt.Print(string(bytes[index+1:]))
 	return nil
 }
