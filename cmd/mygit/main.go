@@ -6,6 +6,7 @@ import (
 
 	"github.com/codecrafters-io/git-starter-go/cmd/catfile"
 	"github.com/codecrafters-io/git-starter-go/cmd/executing"
+	"github.com/codecrafters-io/git-starter-go/cmd/hash"
 	"github.com/codecrafters-io/git-starter-go/cmd/initcommand"
 	"github.com/codecrafters-io/git-starter-go/cmd/util/command"
 )
@@ -35,8 +36,21 @@ func main() {
 		} else {
 			ex = catfile.CatFile{BlobShaDigest: os.Args[2]}
 		}
+		
 		if err := commandExecutor(ex, options); err != nil {
 			slog.Error("Error executing cat-file command", "err", err)
+			os.Exit(1)
+		}
+	case command.HashObject:
+		if(os.Args[2] == "-w") {
+			options["write"] = true
+			ex = hash.HashObject{FileName: os.Args[3]}
+		} else {
+			ex = hash.HashObject{FileName: os.Args[2]}
+		}
+
+		if err := commandExecutor(ex, options); err != nil {
+			slog.Error("Error executing hash-object command", "err", err)
 			os.Exit(1)
 		}
 	default:
