@@ -11,7 +11,7 @@ import (
 type Init struct {}
 
 func (i Init) Execute(options map[string]bool) error {
-	slog.Debug("Called: Init.Execute()")
+	slog.Info("Called: Init.Execute()")
 	paths := []string{gitpath.Git, gitpath.Objects, gitpath.Refs}
 
 	for _, dir := range paths {
@@ -26,7 +26,7 @@ func (i Init) Execute(options map[string]bool) error {
 		return err
 	}
 	
-	slog.Debug("Initialized git directory")
+	slog.Info("Initialized git directory")
 	return nil
 }
 

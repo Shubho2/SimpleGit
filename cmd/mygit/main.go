@@ -18,7 +18,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Declaring an variable of Executor type
 	var ex executing.Executor
 	options := make(map[string]bool)
 
@@ -26,14 +25,18 @@ func main() {
 	case command.Init:
 		ex = initcommand.Init{}
 		if err := commandExecutor(ex, options); err != nil {
+			slog.Error("Error executing init command", "err", err)
 			os.Exit(1)
 		}
 	case command.CatFile:
-		ex = catfile.CatFile{}
 		if(os.Args[2] == "-p") { 
 			options["pretty_print"] = true
+			ex = catfile.CatFile{BlobShaDigest: os.Args[3]}
+		} else {
+			ex = catfile.CatFile{BlobShaDigest: os.Args[2]}
 		}
 		if err := commandExecutor(ex, options); err != nil {
+			slog.Error("Error executing cat-file command", "err", err)
 			os.Exit(1)
 		}
 	default:

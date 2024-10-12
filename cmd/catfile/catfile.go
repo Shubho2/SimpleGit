@@ -9,12 +9,12 @@ import (
 )
 
 type CatFile struct {
-	blobShaDigest string
+	BlobShaDigest string
 }
 
 func (cf CatFile) Execute(options map[string]bool) error {
-	slog.Debug("Called: CatFile.Execute()")
-	bytes, err := executing.ReadTreeObject(cf.blobShaDigest)
+	slog.Info("Called: CatFile.Execute()")
+	bytes, err := executing.ReadTreeObject(cf.BlobShaDigest)
 	if err != nil {
 		return err
 	}
