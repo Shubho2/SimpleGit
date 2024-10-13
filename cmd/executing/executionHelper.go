@@ -37,6 +37,7 @@ func ReadTreeObject(shaDigest string) ([]byte, error) {
 
 	slog.Info("Successfully read tree object")
 	zlibReader.Close()
+	file.Close()
 	return buffer, nil
 }
 
@@ -49,9 +50,11 @@ func WriteBlobObject(fileName string) (string, error) {
 		slog.Error("Error reading ", "file", fileName)
 		return "", err
 	}
+	
+	contentToWrite := fmt.Sprintf("blob %d\x00%s", len(bytes), string(bytes))
+	slog.Info("Content to write", "contentToWrite", contentToWrite)
 
-	contentToWrite := []byte("blob " + string(len(bytes)) + "\x00" + string(bytes)) 
-	shaDigest, err := write(contentToWrite)
+	shaDigest, err := write([]byte(contentToWrite))
 	if err != nil {
 		slog.Error("Error writing ", "file", fileName)
 		return "", err
@@ -66,36 +69,49 @@ func WriteBlobObject(fileName string) (string, error) {
 
 func write(bytes []byte) (string, error) {
 	shaDigest := calculateShaDigest(bytes)
-	pathToFileURL := createPathFrom(shaDigest);
-
-	file, err := os.Open(pathToFileURL)
+	slog.Info("Calculated sha digest", "shaDigest", shaDigest)
+	
+	folderPath, err := createPathFrom(shaDigest)
 	if err != nil {
-		slog.Error("Error opening ", "file", pathToFileURL)
+		slog.Error("Error creating path from", "shaDigest", shaDigest)
 		return "", err
 	}
 
-	w := zlib.NewWriter(io.Writer(file));
-	_, err = w.Write(bytes);
+	objectPath := strings.Join([]string{folderPath, shaDigest[2:]}, "/");
+	file, err := os.OpenFile(objectPath, os.O_CREATE | os.O_APPEND | os.O_WRONLY, 0644);
+
 	if err != nil {
-		slog.Error("Error writing bytes to", "file", pathToFileURL)
+		slog.Error("Error opening ", "file", objectPath)
 		return "", err
 	}
 
+	writer := zlib.NewWriter(io.Writer(file));
+	_, err = writer.Write(bytes);
+	if err != nil {
+		slog.Error("Error writing bytes to", "file", objectPath)
+		return "", err
+	}
+
+	writer.Close();
+	file.Close();
 	return shaDigest, nil
 }
 
 
 func calculateShaDigest(bytes []byte) string {
-	sha := sha1.New();
-	sha.Write(bytes);
-	return fmt.Sprintf("%x", sha.Sum(nil));
+	return fmt.Sprintf("%x", sha1.Sum(bytes));
 }
 
-func createPathFrom(shaDigest string) string {
-	var objectPath string = strings.Join([]string{gitpath.Objects, shaDigest[0:2]}, "/");
-	os.MkdirAll(objectPath, 0755);
-	slog.Info("Created directory", "objectPath", objectPath);
-	return objectPath
+func createPathFrom(shaDigest string) (string, error) {
+	var folderPath string = strings.Join([]string{gitpath.Objects, shaDigest[0:2]}, "/");
+	err := os.MkdirAll(folderPath, 0755);
+	if err != nil {
+		slog.Error("Error creating directory", "objectPath", folderPath);
+		return "", err
+	}
+
+	slog.Info("Created directory at", "objectPath", folderPath);
+	return folderPath, nil
 }
 
 // Gets the path to the file URL from the SHA digest.
