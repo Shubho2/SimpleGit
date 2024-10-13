@@ -8,6 +8,7 @@ import (
 	"github.com/codecrafters-io/git-starter-go/cmd/executing"
 	"github.com/codecrafters-io/git-starter-go/cmd/hash"
 	"github.com/codecrafters-io/git-starter-go/cmd/initcommand"
+	"github.com/codecrafters-io/git-starter-go/cmd/lstree"
 	"github.com/codecrafters-io/git-starter-go/cmd/util/command"
 )
 
@@ -36,7 +37,7 @@ func main() {
 		} else {
 			ex = catfile.CatFile{BlobShaDigest: os.Args[2]}
 		}
-		
+
 		if err := commandExecutor(ex, options); err != nil {
 			slog.Error("Error executing cat-file command", "err", err)
 			os.Exit(1)
@@ -51,6 +52,18 @@ func main() {
 
 		if err := commandExecutor(ex, options); err != nil {
 			slog.Error("Error executing hash-object command", "err", err)
+			os.Exit(1)
+		}
+	case command.LsTree:
+		if(os.Args[2] == "--name-only") { 
+			options["name_only"] = true
+			ex = lstree.LsTree{TreeShaDigest: os.Args[3]}
+		} else {
+			ex = lstree.LsTree{TreeShaDigest: os.Args[2]}
+		}
+
+		if err := commandExecutor(ex, options); err != nil {
+			slog.Error("Error executing ls-tree command", "err", err)
 			os.Exit(1)
 		}
 	default:

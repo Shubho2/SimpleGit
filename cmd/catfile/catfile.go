@@ -14,7 +14,7 @@ type CatFile struct {
 
 func (cf CatFile) Execute(options map[string]bool) error {
 	slog.Info("Called: CatFile.Execute()")
-	bytes, err := executing.ReadTreeObject(cf.BlobShaDigest)
+	bytes, err := executing.ReadTreeOrBlobObject(cf.BlobShaDigest)
 	if err != nil {
 		return err
 	}

@@ -12,8 +12,8 @@ import (
 	"github.com/codecrafters-io/git-starter-go/cmd/util/gitpath"
 )
 
-// ReadTreeObject: reads the tree object from the .git/objects directory.
-func ReadTreeObject(shaDigest string) ([]byte, error) {
+// ReadTreeOrBlobObject: reads the tree object from the .git/objects directory.
+func ReadTreeOrBlobObject(shaDigest string) ([]byte, error) {
 	slog.Info("Reading tree object using", "shaDigest", shaDigest)
 	pathToFileURL := getPathToFileURLFrom(shaDigest)
 
