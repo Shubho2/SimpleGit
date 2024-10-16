@@ -137,7 +137,7 @@ func CommitTreeObject(treeShaDigest string, parentShaDigest string, message stri
 	content := []byte(fmt.Sprintf("commit %d\x00", len(commitData)))
 	content = append(content, []byte(commitData)...)
 
-	slog.Info("Content to write in commit object file", "contentToWrite", content)
+	slog.Info("Content to write in commit object file", "contentToWrite", string(content))
 	shaDigest, err := write(content)
 	if err != nil {
 		slog.Error("Error committing tree object of", "treeShaDigest", treeShaDigest)
