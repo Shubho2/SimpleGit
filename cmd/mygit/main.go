@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/codecrafters-io/git-starter-go/cmd/catfile"
+	"github.com/codecrafters-io/git-starter-go/cmd/commit"
 	"github.com/codecrafters-io/git-starter-go/cmd/executing"
 	"github.com/codecrafters-io/git-starter-go/cmd/hash"
 	"github.com/codecrafters-io/git-starter-go/cmd/initcommand"
@@ -71,6 +72,16 @@ func main() {
 		ex = write.WriteTree{}
 		if err := commandExecutor(ex, options); err != nil {
 			slog.Error("Error executing write-tree command", "err", err)
+			os.Exit(1)
+		}
+	case command.CommitTree:
+		ex = commit.CommitTree { 	
+						TreeShaDigest: os.Args[2], 
+						ParentShaDigest: os.Args[4], 
+						Message: os.Args[6],
+					}
+		if err := commandExecutor(ex, options); err != nil {
+			slog.Error("Error executing commit-tree command", "err", err)
 			os.Exit(1)
 		}
 	default:

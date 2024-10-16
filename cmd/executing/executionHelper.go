@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/codecrafters-io/git-starter-go/cmd/util/gitpath"
 )
@@ -101,7 +102,7 @@ func WriteTreeObject(root string) ([]byte, error) {
 	}
 	
 	dataToWrite := append([]byte(fmt.Sprintf("tree %d\x00", len(bytes))), bytes...)
-	slog.Info("Content to write in tree object file", "contentToWrite", dataToWrite)
+	slog.Info("Content to write in tree object file", "contentToWrite", string(dataToWrite))
 
 	shaDigest, err := write(dataToWrite)
 	if err != nil {
@@ -110,6 +111,39 @@ func WriteTreeObject(root string) ([]byte, error) {
 	}
 
 	slog.Info("Successfully wrote tree object")
+	return shaDigest, nil
+}
+
+func CommitTreeObject(treeShaDigest string, parentShaDigest string, message string) ([]byte, error) {
+	slog.Info("Committing tree object of", "treeShaDigest", treeShaDigest)
+	
+	currentTime := time.Now().Unix()
+	timezone, _ := time.Now().Local().Zone()
+	author := "test"
+	authorEmail := "test@gmail.com"
+
+	commitData := fmt.Sprintf("tree %s\nparent %s\nauthor %s <%s> %s %s\ncommitter %s <%s> %s %s\n\n%s\n",
+										treeShaDigest,
+										parentShaDigest, 
+										author, 
+										authorEmail, 
+										fmt.Sprint(currentTime), 
+										timezone,
+										author,
+										authorEmail,
+										fmt.Sprint(currentTime),
+										timezone,
+										message)
+	content := []byte(fmt.Sprintf("commit %d\x00", len(commitData)))
+	content = append(content, []byte(commitData)...)
+
+	slog.Info("Content to write in commit object file", "contentToWrite", content)
+	shaDigest, err := write(content)
+	if err != nil {
+		slog.Error("Error committing tree object of", "treeShaDigest", treeShaDigest)
+		return nil, err
+	}
+	slog.Info("Successfully committed tree object")
 	return shaDigest, nil
 }
 
