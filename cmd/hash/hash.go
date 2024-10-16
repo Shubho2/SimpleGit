@@ -1,6 +1,7 @@
 package hash
 
 import (
+	"encoding/hex"
 	"fmt"
 	"log/slog"
 
@@ -20,6 +21,6 @@ func (ho HashObject) Execute(options map[string]bool) error {
 		return err
 	}
 
-	fmt.Print(shaDigest)
+	fmt.Print(hex.EncodeToString(shaDigest))
 	return nil
 }

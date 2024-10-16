@@ -3,8 +3,10 @@ package executing
 import (
 	"compress/zlib"
 	"crypto/sha1"
+	"encoding/hex"
 	"fmt"
 	"io"
+	"io/fs"
 	"log/slog"
 	"os"
 	"strings"
@@ -42,64 +44,119 @@ func ReadTreeOrBlobObject(shaDigest string) ([]byte, error) {
 }
 
 // WriteBlobObject: writes the blob object to the .git/objects directory.
-func WriteBlobObject(fileName string) (string, error) {
-	slog.Info("Writing blob object using", "fileName", fileName)
+func WriteBlobObject(fileName string) ([]byte, error) {
+	slog.Info("Writing blob object of", "fileName", fileName)
 
 	bytes, err := os.ReadFile(fileName)
 	if err != nil {
 		slog.Error("Error reading ", "file", fileName)
-		return "", err
+		return nil, err
 	}
 	
 	contentToWrite := fmt.Sprintf("blob %d\x00%s", len(bytes), string(bytes))
-	slog.Info("Content to write", "contentToWrite", contentToWrite)
+	slog.Info("Content to write in blob object file", "contentToWrite", contentToWrite)
 
 	shaDigest, err := write([]byte(contentToWrite))
 	if err != nil {
-		slog.Error("Error writing ", "file", fileName)
-		return "", err
+		slog.Error("Error writing blob object of", "file", fileName)
+		return nil, err
 	}
 
 	slog.Info("Successfully wrote blob object")
 	return shaDigest, nil
 }
 
-
-//******** Private Functions ********//
-
-func write(bytes []byte) (string, error) {
-	shaDigest := calculateShaDigest(bytes)
-	slog.Info("Calculated sha digest", "shaDigest", shaDigest)
+func WriteTreeObject(root string) ([]byte, error) {
+	slog.Info("Writing tree object of", "root", root)
 	
-	folderPath, err := createPathFrom(shaDigest)
+	files, err := os.ReadDir(root)
 	if err != nil {
-		slog.Error("Error creating path from", "shaDigest", shaDigest)
-		return "", err
+		slog.Error("Error reading ", "directory", root)
+		return nil, err
+	}
+	
+	var bytes []byte
+	for _, file := range files {
+		if file.Name() == gitpath.Git {
+			continue
+		}
+		
+		var shaHash []byte
+		if file.IsDir() {
+			shaHash, err = WriteTreeObject(strings.Join([]string{root, file.Name()}, "/"))
+			if err != nil {
+				slog.Error("Error writing ", "file", file.Name())
+				return nil, err
+			}
+		} else {
+			shaHash, err = WriteBlobObject(strings.Join([]string{root, file.Name()}, "/"))
+			if err != nil {
+				slog.Error("Error writing ", "file", file.Name())
+				return nil, err
+			}
+		}
+
+		b2 := append([]byte(fmt.Sprintf("%s %s\x00", getFileMode(file), file.Name())), shaHash...)
+		bytes = append(bytes, b2...)
+	}
+	
+	dataToWrite := append([]byte(fmt.Sprintf("tree %d\x00", len(bytes))), bytes...)
+	slog.Info("Content to write in tree object file", "contentToWrite", dataToWrite)
+
+	shaDigest, err := write(dataToWrite)
+	if err != nil {
+		slog.Error("Error writing tree object of", "root", root)
+		return nil, err
 	}
 
-	objectPath := strings.Join([]string{folderPath, shaDigest[2:]}, "/");
-	file, err := os.OpenFile(objectPath, os.O_CREATE | os.O_APPEND | os.O_WRONLY, 0644);
-
-	if err != nil {
-		slog.Error("Error opening ", "file", objectPath)
-		return "", err
-	}
-
-	writer := zlib.NewWriter(io.Writer(file));
-	_, err = writer.Write(bytes);
-	if err != nil {
-		slog.Error("Error writing bytes to", "file", objectPath)
-		return "", err
-	}
-
-	writer.Close();
-	file.Close();
+	slog.Info("Successfully wrote tree object")
 	return shaDigest, nil
 }
 
+//******** Private Functions ********//
 
-func calculateShaDigest(bytes []byte) string {
-	return fmt.Sprintf("%x", sha1.Sum(bytes));
+func write(bytes []byte) ([]byte, error) {
+	shaDigest := calculateShaDigest(bytes)
+	hexDigest := hex.EncodeToString(shaDigest)
+	slog.Info("Calculated sha digest", "shaDigest", hexDigest)
+	folderPath, err := createPathFrom(hexDigest)
+	if err != nil {
+		slog.Error("Error creating path from", "shaDigest", hexDigest)
+		return nil, err
+	}
+
+	objectPath := strings.Join([]string{folderPath, hexDigest[2:]}, "/");
+	file, err := os.OpenFile(objectPath, os.O_CREATE | os.O_APPEND | os.O_WRONLY, 0644);
+	if err != nil {
+		slog.Error("Error opening ", "file", objectPath)
+		return nil, err
+	}
+	defer file.Close()
+
+	writer := zlib.NewWriter(io.Writer(file))
+	defer writer.Close()
+	_, err = writer.Write(bytes)
+	if err != nil {
+		slog.Error("Error writing bytes to", "file", objectPath)
+		return nil, err
+	}
+
+	slog.Info("Successfully wrote object to", "objectPath", objectPath)
+	return shaDigest, nil
+}
+
+func getFileMode(file fs.DirEntry) string {
+	if file.IsDir() {
+		return "40000"
+	} else {
+		return "100644"
+	}
+}
+
+func calculateShaDigest(bytes []byte) []byte {
+	sha1 := sha1.New()
+	sha1.Write(bytes)
+	return sha1.Sum(nil)
 }
 
 func createPathFrom(shaDigest string) (string, error) {

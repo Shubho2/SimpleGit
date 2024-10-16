@@ -10,6 +10,7 @@ import (
 	"github.com/codecrafters-io/git-starter-go/cmd/initcommand"
 	"github.com/codecrafters-io/git-starter-go/cmd/lstree"
 	"github.com/codecrafters-io/git-starter-go/cmd/util/command"
+	"github.com/codecrafters-io/git-starter-go/cmd/write"
 )
 
 func main() {
@@ -64,6 +65,12 @@ func main() {
 
 		if err := commandExecutor(ex, options); err != nil {
 			slog.Error("Error executing ls-tree command", "err", err)
+			os.Exit(1)
+		}
+	case command.WriteTree:
+		ex = write.WriteTree{}
+		if err := commandExecutor(ex, options); err != nil {
+			slog.Error("Error executing write-tree command", "err", err)
 			os.Exit(1)
 		}
 	default:
